@@ -1,3 +1,5 @@
+# NOT: Python 3.10.11
+
 import sqlite3
 import matplotlib
 
