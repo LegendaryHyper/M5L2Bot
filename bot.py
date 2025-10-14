@@ -3,6 +3,7 @@ from logic import *
 import discord
 from discord.ext import commands
 from config import TOKEN
+import os
 
 # Veri tabanı yöneticisini başlatma
 manager = DB_Map("database.db")
@@ -11,7 +12,7 @@ bot = commands.Bot(command_prefix="!", intents=discord.Intents.all())
 
 @bot.event
 async def on_ready():
-    print("Bot başlatıldı!")
+    print("Bot başlatıldı!")  
 
 @bot.command()
 async def start(ctx: commands.Context):
@@ -20,18 +21,52 @@ async def start(ctx: commands.Context):
 @bot.command()
 async def help_me(ctx: commands.Context):
     await ctx.send(
-        # Kullanılabilir komutların listesini gösterecek olan komutu yazın.
+        "`!start` - bot ile çalışmaya başlayın ve bir hoş geldin mesajı alın.\n"
+        "`!help_me` - mevcut komutların listesini alın\n"
+        "`!show_city <şehir_adı>` - belirtilen şehri haritada gösterin.\n"
+        "`!remember_city <şehir_adı>` - belirtilen şehri kaydedin.\n"
+        "`!show_my_cities` - kaydettiğiniz tüm şehirleri gösterin."
     )
 
 @bot.command()
 async def show_city(ctx: commands.Context, *, city_name=""):
-    # Belirtilen şehirle birlikte haritayı gösterecek komutu yazın.
+    if not city_name:
+        await ctx.send("Hatalı format. Lütfen şehir adını İngilizce olarak ve komuttan sonra bir boşluk bırakarak girin.")
+        return
+    manager.create_graph(f'{ctx.author.id}.png', [city_name])  # Belirtilen şehir için bir harita oluşturma
+    await ctx.send(file=discord.File(f'{ctx.author.id}.png'))
+    if os.path.exists(f'{ctx.author.id}.png'):
+        os.remove(f'{ctx.author.id}.png')
+    else:
+        print(f"File {f'{ctx.author.id}.png'} does not exist.")
+
+@bot.command()
+async def show_country_cities(ctx: commands.Context, *, country_name=""): # BUGLI
+    if not country_name:
+        await ctx.send("Hatalı format. Lütfen ülke adını İngilizce olarak ve komuttan sonra bir boşluk bırakarak girin.")
+        return
+    manager.return_cities(country_name, f'{ctx.author.id}_country.png')  # Belirtilen şehir için bir harita oluşturma
+    await ctx.send(file=discord.File(f'{ctx.author.id}_country.png'))
+    if os.path.exists(f'{ctx.author.id}_country.png'):
+        os.remove(f'{ctx.author.id}_country.png')
+    else:
+        print(f"File {f'{ctx.author.id}_country.png'} does not exist.")
+
 
 @bot.command()
 async def show_my_cities(ctx: commands.Context):
     cities = manager.select_cities(ctx.author.id)  # Kullanıcının kaydettiği şehirlerin listesini alma
 
-    # Kullanıcının şehirleriyle birlikte haritayı gösterecek komutu yazın
+    if cities:
+        manager.create_graph(f'{ctx.author.id}_cities.png', cities)  # Kullanıcının kaydettiği tüm şehirlerle bir harita oluşturma
+        await ctx.send(file=discord.File(f'{ctx.author.id}_cities.png'))
+        if os.path.exists(f'{ctx.author.id}_cities.png'):
+            os.remove(f'{ctx.author.id}_cities.png')
+        else:
+            print(f"File {f'{ctx.author.id}_cities.png'} does not exist.")
+    else:
+        await ctx.send("Henüz hiç şehir kaydetmediniz.")
+    
 
 @bot.command()
 async def remember_city(ctx: commands.Context, *, city_name=""):
