@@ -45,13 +45,45 @@ async def show_country_cities(ctx: commands.Context, *, country_name=""): # BUGL
     if not country_name:
         await ctx.send("Hatalı format. Lütfen ülke adını İngilizce olarak ve komuttan sonra bir boşluk bırakarak girin.")
         return
-    manager.return_cities(country_name, f'{ctx.author.id}_country.png')  # Belirtilen şehir için bir harita oluşturma
+    city_tuple = manager.return_cities(country_name, f'{ctx.author.id}_country.png')  # Belirtilen şehir için bir harita oluşturma
     await ctx.send(file=discord.File(f'{ctx.author.id}_country.png'))
+    city_listed = ""
+    counter = 0
+    for i in city_tuple:
+        if counter != 49:
+            city_listed += f"{i}\n"
+            counter += 1
+        else:
+            break
+    embed = discord.Embed(title="Ülkedeki 50 şehir", description=city_listed)
+    await ctx.send(embed=embed)
     if os.path.exists(f'{ctx.author.id}_country.png'):
         os.remove(f'{ctx.author.id}_country.png')
     else:
         print(f"File {f'{ctx.author.id}_country.png'} does not exist.")
 
+@bot.command()
+async def show_country_cities_w_pop(ctx: commands.Context, *, country_name=""): # BUGLI
+    if not country_name:
+        await ctx.send("Hatalı format. Lütfen ülke adını İngilizce olarak ve komuttan sonra bir boşluk bırakarak girin.")
+        return
+    manager.return_cities(country_name, f'{ctx.author.id}_country.png')  # Belirtilen şehir için bir harita oluşturma
+    await ctx.send(file=discord.File(f'{ctx.author.id}_country.png'))
+    city_tuple = manager.return_cities_w_pop(country_name)
+    city_listed = ""
+    counter = 0
+    for i in city_tuple:
+        if counter != 49:
+            city_listed += f"{i}\n"
+            counter += 1
+        else:
+            break
+    embed = discord.Embed(title="Ülkedeki 50 şehir ve nüfusları", description=city_listed)
+    await ctx.send(embed=embed)
+    if os.path.exists(f'{ctx.author.id}_country.png'):
+        os.remove(f'{ctx.author.id}_country.png')
+    else:
+        print(f"File {f'{ctx.author.id}_country.png'} does not exist.")
 
 @bot.command()
 async def show_my_cities(ctx: commands.Context):
@@ -67,11 +99,18 @@ async def show_my_cities(ctx: commands.Context):
     else:
         await ctx.send("Henüz hiç şehir kaydetmediniz.")
     
-
 @bot.command()
 async def remember_city(ctx: commands.Context, *, city_name=""):
     if manager.add_city(ctx.author.id, city_name):  # Şehir adının format uygunluğunu kontrol etme. Başarılıysa şehri kaydet!
         await ctx.send(f'{city_name} şehri başarıyla kaydedildi!')
+    else:
+        await ctx.send("Hatalı format. Lütfen şehir adını İngilizce olarak ve komuttan sonra bir boşluk bırakarak girin.")
+
+@bot.command()
+async def population(ctx, city_name = ""):
+    output = manager.city_population(city_name)
+    if output:  # Şehir adının format uygunluğunu kontrol etme. Başarılıysa şehri kaydet!
+        await ctx.send(f'{city_name} şehrinin nüfusu: {output}')
     else:
         await ctx.send("Hatalı format. Lütfen şehir adını İngilizce olarak ve komuttan sonra bir boşluk bırakarak girin.")
 
